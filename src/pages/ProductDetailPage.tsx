@@ -8,6 +8,7 @@ import ProductInfo from "@/components/product/ProductInfo";
 import AddToCartForm from "@/components/product/AddToCartForm";
 import ProductTabs from "@/components/product/ProductTabs";
 import RelatedProducts from "@/components/product/RelatedProducts";
+import BreadcrumbNav from "@/components/navigation/Breadcrumb";
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,8 +40,16 @@ const ProductDetailPage = () => {
     );
   }
 
+  const breadcrumbItems = [
+    { label: "Products", href: "/products" },
+    { label: product.name }
+  ];
+
   return (
     <div className="container-custom py-8 md:py-12">
+      {/* Breadcrumb Navigation */}
+      <BreadcrumbNav items={breadcrumbItems} />
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* Product Images */}
         <ImageGallery images={product.images} productName={product.name} />
