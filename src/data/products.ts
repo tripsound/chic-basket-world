@@ -153,6 +153,23 @@ export const getProductById = (id: string): Product | undefined => {
   return products.find(product => product.id === id);
 };
 
+// Helper function to get related products
+export const getRelatedProducts = (productId: string, limit: number = 4): Product[] => {
+  const currentProduct = getProductById(productId);
+  
+  if (!currentProduct) {
+    return [];
+  }
+  
+  // Find products in the same category, excluding the current product
+  return products
+    .filter(product => 
+      product.id !== productId && 
+      product.category === currentProduct.category
+    )
+    .slice(0, limit);
+};
+
 // Helper function to filter products by category and search
 export const filterProducts = (
   categoryFilter?: string,

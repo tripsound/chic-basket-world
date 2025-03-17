@@ -2,21 +2,28 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getProductById } from "@/data/products";
+import { getProductById, getRelatedProducts } from "@/data/products";
 import ImageGallery from "@/components/product/ImageGallery";
 import ProductInfo from "@/components/product/ProductInfo";
 import AddToCartForm from "@/components/product/AddToCartForm";
 import ProductTabs from "@/components/product/ProductTabs";
+import RelatedProducts from "@/components/product/RelatedProducts";
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState(id ? getProductById(id) : undefined);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   useEffect(() => {
     if (id) {
       const foundProduct = getProductById(id);
       setProduct(foundProduct);
+      
+      if (foundProduct) {
+        const related = getRelatedProducts(id);
+        setRelatedProducts(related);
+      }
     }
   }, [id]);
 
@@ -45,6 +52,9 @@ const ProductDetailPage = () => {
           <ProductTabs />
         </div>
       </div>
+      
+      {/* Related Products Section */}
+      <RelatedProducts products={relatedProducts} currentProductId={product.id} />
     </div>
   );
 };
