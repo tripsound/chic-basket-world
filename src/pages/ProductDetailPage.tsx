@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Heart, ShoppingBag, Check } from "lucide-react";
+import { Minus, Plus, Heart, ShoppingBag, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getProductById } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,16 +46,8 @@ const ProductDetailPage = () => {
     );
   }
 
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? product.images.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === product.images.length - 1 ? 0 : prev + 1
-    );
+  const handleThumbnailClick = (index: number) => {
+    setCurrentImageIndex(index);
   };
 
   const handleAddToCart = () => {
@@ -96,49 +89,26 @@ const ProductDetailPage = () => {
   const productPrice = product.salePrice || product.price;
 
   return (
-    <div className="container-custom py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+    <div className="container-custom py-8 md:py-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* Product Images */}
-        <div className="space-y-6">
-          <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+        <div className="space-y-4">
+          <div className="aspect-square bg-gray-50 rounded-md overflow-hidden">
             <img
               src={product.images[currentImageIndex]}
               alt={product.name}
               className="w-full h-full object-cover"
             />
-            
-            {product.images.length > 1 && (
-              <>
-                <button
-                  onClick={handlePrevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md hover:bg-white transition-colors"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-md hover:bg-white transition-colors"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              </>
-            )}
-            
-            {product.sale && (
-              <span className="absolute top-4 left-4 bg-accent text-white px-3 py-1 rounded-full text-xs font-medium">
-                Sale
-              </span>
-            )}
           </div>
           
           {product.images.length > 1 && (
-            <div className="flex gap-4 overflow-x-auto pb-2">
+            <div className="grid grid-cols-4 gap-2">
               {product.images.map((image, index) => (
                 <button
                   key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`relative w-20 h-20 flex-shrink-0 rounded-md overflow-hidden ${
-                    index === currentImageIndex ? "ring-2 ring-accent" : "ring-1 ring-gray-200"
+                  onClick={() => handleThumbnailClick(index)}
+                  className={`relative aspect-square rounded-md overflow-hidden border ${
+                    index === currentImageIndex ? "border-accent" : "border-gray-200"
                   }`}
                 >
                   <img src={image} alt={`${product.name} view ${index + 1}`} className="w-full h-full object-cover" />
@@ -150,30 +120,28 @@ const ProductDetailPage = () => {
 
         {/* Product Info */}
         <div>
-          <h1 className="font-serif text-3xl font-bold mb-2">{product.name}</h1>
+          <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
           
-          <div className="flex items-center mb-6">
-            {product.sale ? (
-              <>
-                <span className="text-2xl font-bold text-accent">${product.salePrice?.toFixed(2)}</span>
-                <span className="ml-3 text-lg text-muted-foreground line-through">${product.price.toFixed(2)}</span>
-              </>
-            ) : (
-              <span className="text-2xl font-bold">${product.price.toFixed(2)}</span>
-            )}
-          </div>
+          {product.sale ? (
+            <div className="mb-4">
+              <span className="text-xl font-semibold text-accent">${product.salePrice?.toFixed(2)}</span>
+              <span className="ml-2 text-sm text-muted-foreground line-through">${product.price.toFixed(2)}</span>
+            </div>
+          ) : (
+            <div className="text-xl font-semibold mb-4">${product.price.toFixed(2)}</div>
+          )}
           
-          <p className="text-muted-foreground mb-8">{product.description}</p>
+          <p className="text-muted-foreground mb-6 text-sm">{product.description}</p>
           
           {/* Color Selection */}
           <div className="mb-6">
-            <h3 className="text-sm font-medium mb-3">Color: <span className="text-muted-foreground">{selectedColor}</span></h3>
-            <div className="flex flex-wrap gap-3">
+            <h3 className="text-sm font-medium mb-2">Color</h3>
+            <div className="flex flex-wrap gap-2">
               {product.colors.map((color) => (
                 <button
                   key={color}
                   onClick={() => setSelectedColor(color)}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                     selectedColor === color
                       ? "ring-2 ring-accent ring-offset-2"
                       : "ring-1 ring-gray-200"
@@ -190,17 +158,17 @@ const ProductDetailPage = () => {
           </div>
           
           {/* Size Selection */}
-          <div className="mb-8">
-            <h3 className="text-sm font-medium mb-3">Size: <span className="text-muted-foreground">{selectedSize}</span></h3>
-            <div className="flex flex-wrap gap-3">
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-2">Size</h3>
+            <div className="flex flex-wrap gap-2">
               {product.sizes.map((size) => (
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
-                  className={`min-w-[3rem] h-10 px-3 rounded-md flex items-center justify-center transition-all ${
+                  className={`min-w-[2.5rem] h-9 px-2 text-sm rounded-md flex items-center justify-center transition-all ${
                     selectedSize === size
                       ? "bg-primary text-primary-foreground"
-                      : "bg-secondary border border-input hover:bg-accent hover:text-accent-foreground"
+                      : "bg-background border border-input hover:bg-accent/10"
                   }`}
                 >
                   {size}
@@ -210,59 +178,76 @@ const ProductDetailPage = () => {
           </div>
           
           {/* Quantity */}
-          <div className="mb-8">
-            <h3 className="text-sm font-medium mb-3">Quantity:</h3>
-            <div className="flex">
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-2">Quantity</h3>
+            <div className="flex w-32">
               <button
                 onClick={() => handleQuantityChange(quantity - 1)}
-                className="w-10 h-10 flex items-center justify-center border border-input bg-background rounded-l-md"
+                className="w-9 h-9 flex items-center justify-center border border-input bg-background rounded-l-md"
                 disabled={quantity <= 1}
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="h-3 w-3" />
               </button>
-              <div className="w-12 h-10 flex items-center justify-center border-t border-b border-input bg-background">
+              <div className="flex-1 h-9 flex items-center justify-center border-t border-b border-input bg-background">
                 {quantity}
               </div>
               <button
                 onClick={() => handleQuantityChange(quantity + 1)}
-                className="w-10 h-10 flex items-center justify-center border border-input bg-background rounded-r-md"
+                className="w-9 h-9 flex items-center justify-center border border-input bg-background rounded-r-md"
                 disabled={quantity >= 10}
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3" />
               </button>
             </div>
           </div>
           
           {/* Add to Cart */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-2 mb-8">
             <Button
-              size="lg"
-              className="flex-1"
+              className="flex-1 bg-black hover:bg-gray-800 text-white"
               onClick={handleAddToCart}
               disabled={loading}
             >
-              <ShoppingBag className="mr-2 h-5 w-5" />
-              Add to Cart - ${(productPrice * quantity).toFixed(2)}
+              Add to Cart
             </Button>
             
-            <Button variant="outline" size="icon" className="h-12 w-12">
+            <Button variant="outline" size="icon" className="h-10 w-10">
               <Heart className="h-5 w-5" />
             </Button>
           </div>
           
-          {/* Additional info */}
-          <div className="mt-8 pt-8 border-t">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-medium mb-2">Shipping</h3>
-                <p className="text-sm text-muted-foreground">Free standard shipping on all orders.</p>
-              </div>
-              <div>
-                <h3 className="font-medium mb-2">Returns</h3>
-                <p className="text-sm text-muted-foreground">Free returns within 30 days of purchase.</p>
-              </div>
-            </div>
-          </div>
+          {/* Product Details Tabs */}
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="care">Care</TabsTrigger>
+              <TabsTrigger value="shipping">Shipping</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="pt-4">
+              <ul className="list-disc pl-5 space-y-2 text-sm">
+                <li>80% Wool, 20% Polyester</li>
+                <li>Dry clean only</li>
+                <li>Imported</li>
+                <li>Model is 5'11" and wears size S</li>
+              </ul>
+            </TabsContent>
+            <TabsContent value="care" className="pt-4">
+              <ul className="list-disc pl-5 space-y-2 text-sm">
+                <li>Dry clean only</li>
+                <li>Do not bleach</li>
+                <li>Cool iron if needed</li>
+                <li>Store folded in a cool, dry place</li>
+              </ul>
+            </TabsContent>
+            <TabsContent value="shipping" className="pt-4">
+              <ul className="list-disc pl-5 space-y-2 text-sm">
+                <li>Free standard shipping on all orders</li>
+                <li>Standard: 3-5 business days</li>
+                <li>Express: 2-3 business days</li>
+                <li>International shipping available</li>
+              </ul>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
