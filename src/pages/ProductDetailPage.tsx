@@ -1,12 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Heart, ShoppingBag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, Heart, ShoppingBag, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProductById } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -183,7 +183,7 @@ const ProductDetailPage = () => {
                     color: ["White", "Cream", "Beige", "Light Wash"].includes(color) ? "#000" : "#fff",
                   }}
                 >
-                  {selectedColor === color && <CheckCheck className="h-4 w-4" />}
+                  {selectedColor === color && <Check className="h-4 w-4" />}
                 </button>
               ))}
             </div>
