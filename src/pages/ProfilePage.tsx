@@ -10,7 +10,7 @@ const ProfilePage = () => {
   const { user, updateProfile, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: user?.displayName || "",
+    name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
     address: user?.address || "",
@@ -111,7 +111,7 @@ const ProfilePage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h3 className="text-sm text-muted-foreground">Full Name</h3>
-                    <p>{user?.displayName || "Not provided"}</p>
+                    <p>{user?.name || "Not provided"}</p>
                   </div>
                   <div>
                     <h3 className="text-sm text-muted-foreground">Email Address</h3>

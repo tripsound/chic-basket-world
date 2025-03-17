@@ -1,22 +1,26 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 interface User {
   id: string;
   email: string;
   name: string;
   isVerified: boolean;
+  phone?: string;
+  address?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
-  registerWithEmail: (email: string, name: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   sendVerificationEmail: (email: string) => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
+  updateProfile: (profileData: any) => void;
   isAuthenticated: boolean;
 }
 
@@ -48,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const loginWithEmail = async (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
     try {
       setLoading(true);
       // In a real app, this would be an API call to authenticate
@@ -73,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const registerWithEmail = async (email: string, name: string, password: string) => {
+  const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
       // In a real app, this would be an API call to register
@@ -114,6 +118,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   };
+  
+  const resendVerificationEmail = async () => {
+    if (!user) {
+      toast.error("No user found to send verification email");
+      return;
+    }
+    await sendVerificationEmail(user.email);
+  };
 
   const verifyEmail = async (token: string): Promise<boolean> => {
     try {
@@ -133,17 +145,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
   };
+  
+  const updateProfile = (profileData: any) => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      name: profileData.name || user.name,
+      phone: profileData.phone || user.phone,
+      address: profileData.address || user.address
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
-        loginWithEmail,
-        registerWithEmail,
+        login,
+        register,
         logout,
         sendVerificationEmail,
+        resendVerificationEmail,
         verifyEmail,
+        updateProfile,
         isAuthenticated: !!user
       }}
     >
