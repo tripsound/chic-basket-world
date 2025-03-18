@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,7 +42,7 @@ const ProductDetailPage = () => {
             id: data.id,
             name: data.name,
             description: data.description,
-            price: parseFloat(data.price),
+            price: parseFloat(String(data.price)),
             category: data.category as 'men' | 'women' | 'shoes' | 'accessories',
             images: data.images,
             colors: Array.isArray(data.colors) 
@@ -55,7 +54,7 @@ const ProductDetailPage = () => {
             featured: Boolean(data.featured),
             new: Boolean(data.new),
             sale: Boolean(data.sale),
-            salePrice: data.sale_price ? parseFloat(data.sale_price) : undefined,
+            salePrice: data.sale_price ? parseFloat(String(data.sale_price)) : undefined,
           };
 
           setProduct(mappedProduct);
@@ -76,7 +75,7 @@ const ProductDetailPage = () => {
               id: item.id,
               name: item.name,
               description: item.description,
-              price: parseFloat(item.price),
+              price: parseFloat(String(item.price)),
               category: item.category as 'men' | 'women' | 'shoes' | 'accessories',
               images: item.images,
               colors: Array.isArray(item.colors)
@@ -88,7 +87,7 @@ const ProductDetailPage = () => {
               featured: Boolean(item.featured),
               new: Boolean(item.new),
               sale: Boolean(item.sale),
-              salePrice: item.sale_price ? parseFloat(item.sale_price) : undefined,
+              salePrice: item.sale_price ? parseFloat(String(item.sale_price)) : undefined,
             }));
             setRelatedProducts(mappedRelated);
           }
@@ -126,7 +125,7 @@ const ProductDetailPage = () => {
 
   const breadcrumbItems = [
     { label: "Products", href: "/products" },
-    { label: product.name }
+    { label: product?.name ?? "" }
   ];
 
   return (
