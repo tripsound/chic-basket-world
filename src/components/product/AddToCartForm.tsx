@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Minus, Plus, Heart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 import { toast } from "sonner";
 import { Product } from "@/data/products";
 
