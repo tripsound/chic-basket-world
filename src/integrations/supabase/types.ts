@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          care: string
+          category: string
+          colors: Json
+          created_at: string
+          description: string
+          details: string
+          featured: boolean | null
+          id: string
+          images: string[]
+          name: string
+          new: boolean | null
+          price: number
+          sale: boolean | null
+          sale_price: number | null
+          shipping: string
+          sizes: Json
+          updated_at: string
+        }
+        Insert: {
+          care: string
+          category: string
+          colors: Json
+          created_at?: string
+          description: string
+          details: string
+          featured?: boolean | null
+          id?: string
+          images: string[]
+          name: string
+          new?: boolean | null
+          price: number
+          sale?: boolean | null
+          sale_price?: number | null
+          shipping: string
+          sizes: Json
+          updated_at?: string
+        }
+        Update: {
+          care?: string
+          category?: string
+          colors?: Json
+          created_at?: string
+          description?: string
+          details?: string
+          featured?: boolean | null
+          id?: string
+          images?: string[]
+          name?: string
+          new?: boolean | null
+          price?: number
+          sale?: boolean | null
+          sale_price?: number | null
+          shipping?: string
+          sizes?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -44,7 +122,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: {
+          user_email: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

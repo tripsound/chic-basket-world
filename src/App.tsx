@@ -19,6 +19,13 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/layout/Layout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AdminRoute from "./components/auth/AdminRoute";
+
+// Admin Pages
+import AdminLayout from "./pages/admin/AdminLayout";
+import DashboardPage from "./pages/admin/DashboardPage";
+import AdminProductsPage from "./pages/admin/products/ProductsPage";
+import ProductForm from "./pages/admin/products/ProductForm";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +70,21 @@ const App = () => (
                 <Route path="register" element={<RegisterPage />} />
                 <Route path="verify-email" element={<VerifyEmailPage />} />
                 <Route path="*" element={<NotFound />} />
+              </Route>
+              
+              {/* Admin Routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route index element={<DashboardPage />} />
+                <Route path="products" element={<AdminProductsPage />} />
+                <Route path="products/new" element={<ProductForm />} />
+                <Route path="products/edit/:id" element={<ProductForm />} />
               </Route>
             </Routes>
           </BrowserRouter>

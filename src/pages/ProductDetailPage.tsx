@@ -2,31 +2,107 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getProductById, getRelatedProducts } from "@/data/products";
+import { supabase } from "@/integrations/supabase/client";
 import ImageGallery from "@/components/product/ImageGallery";
 import ProductInfo from "@/components/product/ProductInfo";
 import AddToCartForm from "@/components/product/AddToCartForm";
 import ProductTabs from "@/components/product/ProductTabs";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import BreadcrumbNav from "@/components/navigation/Breadcrumb";
+import { Product } from "@/data/products";
+import { toast } from "sonner";
 
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(id ? getProductById(id) : undefined);
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      const foundProduct = getProductById(id);
-      setProduct(foundProduct);
+    const fetchProduct = async () => {
+      if (!id) return;
       
-      if (foundProduct) {
-        const related = getRelatedProducts(id);
-        setRelatedProducts(related);
+      setLoading(true);
+      try {
+        // Fetch the product from Supabase
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching product:", error);
+          throw error;
+        }
+
+        if (data) {
+          // Transform the data to match the Product interface
+          const mappedProduct: Product = {
+            id: data.id,
+            name: data.name,
+            description: data.description,
+            price: parseFloat(data.price),
+            category: data.category,
+            images: data.images,
+            colors: data.colors.map((c: any) => c.name),
+            sizes: data.sizes.map((s: any) => s.name),
+            featured: data.featured,
+            new: data.new,
+            sale: data.sale,
+            salePrice: data.sale_price ? parseFloat(data.sale_price) : undefined,
+          };
+
+          setProduct(mappedProduct);
+          
+          // Fetch related products
+          const { data: relatedData, error: relatedError } = await supabase
+            .from("products")
+            .select("*")
+            .eq("category", data.category)
+            .neq("id", id)
+            .limit(4);
+
+          if (relatedError) {
+            console.error("Error fetching related products:", relatedError);
+          } else {
+            // Transform the related products to match the Product interface
+            const mappedRelated = relatedData.map((item) => ({
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              price: parseFloat(item.price),
+              category: item.category,
+              images: item.images,
+              colors: item.colors.map((c: any) => c.name),
+              sizes: item.sizes.map((s: any) => s.name),
+              featured: item.featured,
+              new: item.new,
+              sale: item.sale,
+              salePrice: item.sale_price ? parseFloat(item.sale_price) : undefined,
+            }));
+            setRelatedProducts(mappedRelated);
+          }
+        }
+      } catch (error) {
+        toast.error("Failed to load product");
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchProduct();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container-custom py-16 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
