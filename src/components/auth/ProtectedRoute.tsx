@@ -1,6 +1,6 @@
 
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/auth";
+import { useAuth } from "@/contexts/auth"; // Updated import path
 import { toast } from "sonner";
 
 interface ProtectedRouteProps {
