@@ -32,14 +32,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface ColorSize {
+  name: string;
+  available: boolean;
+}
+
 interface FormValues {
   name: string;
   description: string;
   price: string;
   sale_price: string;
   category: string;
-  colors: { name: string; available: boolean }[];
-  sizes: { name: string; available: boolean }[];
+  colors: ColorSize[];
+  sizes: ColorSize[];
   images: string[];
   details: string;
   care: string;
@@ -92,14 +97,46 @@ const ProductForm = () => {
         if (error) throw error;
 
         if (data) {
+          // Process colors and sizes to ensure they're in the correct format
+          const processedColors: ColorSize[] = [];
+          const processedSizes: ColorSize[] = [];
+
+          // Handle colors which can be array of objects or array of strings
+          if (Array.isArray(data.colors)) {
+            data.colors.forEach((color: any) => {
+              if (typeof color === 'string') {
+                processedColors.push({ name: color, available: true });
+              } else if (typeof color === 'object' && color !== null) {
+                processedColors.push({
+                  name: color.name || '',
+                  available: color.available === undefined ? true : color.available
+                });
+              }
+            });
+          }
+
+          // Handle sizes which can be array of objects or array of strings
+          if (Array.isArray(data.sizes)) {
+            data.sizes.forEach((size: any) => {
+              if (typeof size === 'string') {
+                processedSizes.push({ name: size, available: true });
+              } else if (typeof size === 'object' && size !== null) {
+                processedSizes.push({
+                  name: size.name || '',
+                  available: size.available === undefined ? true : size.available
+                });
+              }
+            });
+          }
+
           form.reset({
             name: data.name,
             description: data.description,
             price: data.price.toString(),
             sale_price: data.sale_price ? data.sale_price.toString() : "",
             category: data.category,
-            colors: Array.isArray(data.colors) ? data.colors : [],
-            sizes: Array.isArray(data.sizes) ? data.sizes : [],
+            colors: processedColors,
+            sizes: processedSizes,
             images: Array.isArray(data.images) ? data.images : [],
             details: data.details,
             care: data.care,

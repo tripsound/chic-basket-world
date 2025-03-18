@@ -44,13 +44,17 @@ const ProductDetailPage = () => {
             name: data.name,
             description: data.description,
             price: parseFloat(data.price),
-            category: data.category,
+            category: data.category as 'men' | 'women' | 'shoes' | 'accessories',
             images: data.images,
-            colors: data.colors.map((c: any) => c.name),
-            sizes: data.sizes.map((s: any) => s.name),
-            featured: data.featured,
-            new: data.new,
-            sale: data.sale,
+            colors: Array.isArray(data.colors) 
+              ? data.colors.map((c: any) => typeof c === 'object' ? c.name : c)
+              : [],
+            sizes: Array.isArray(data.sizes) 
+              ? data.sizes.map((s: any) => typeof s === 'object' ? s.name : s)
+              : [],
+            featured: Boolean(data.featured),
+            new: Boolean(data.new),
+            sale: Boolean(data.sale),
             salePrice: data.sale_price ? parseFloat(data.sale_price) : undefined,
           };
 
@@ -68,18 +72,22 @@ const ProductDetailPage = () => {
             console.error("Error fetching related products:", relatedError);
           } else {
             // Transform the related products to match the Product interface
-            const mappedRelated = relatedData.map((item) => ({
+            const mappedRelated: Product[] = relatedData.map((item) => ({
               id: item.id,
               name: item.name,
               description: item.description,
               price: parseFloat(item.price),
-              category: item.category,
+              category: item.category as 'men' | 'women' | 'shoes' | 'accessories',
               images: item.images,
-              colors: item.colors.map((c: any) => c.name),
-              sizes: item.sizes.map((s: any) => s.name),
-              featured: item.featured,
-              new: item.new,
-              sale: item.sale,
+              colors: Array.isArray(item.colors)
+                ? item.colors.map((c: any) => typeof c === 'object' ? c.name : c)
+                : [],
+              sizes: Array.isArray(item.sizes)
+                ? item.sizes.map((s: any) => typeof s === 'object' ? s.name : s)
+                : [],
+              featured: Boolean(item.featured),
+              new: Boolean(item.new),
+              sale: Boolean(item.sale),
               salePrice: item.sale_price ? parseFloat(item.sale_price) : undefined,
             }));
             setRelatedProducts(mappedRelated);
