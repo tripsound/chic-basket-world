@@ -1,23 +1,47 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const VerifyEmailPage = () => {
   const { user, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
   const [isSending, setIsSending] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    // Check if we have the email from the user object or URL
+    const getEmailFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('email');
+    };
+
+    setEmail(user?.email || getEmailFromUrl() || "");
+
+    // If user is already verified, redirect to home
+    if (user?.isVerified) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   const handleResendEmail = async () => {
     if (countdown > 0) return;
     
     try {
       setIsSending(true);
+      
+      if (!email) {
+        toast.error("No email address found to send verification link");
+        return;
+      }
+      
       await resendVerificationEmail();
       toast.success("Verification email sent successfully");
+      
       // Start countdown for 60 seconds
       setCountdown(60);
       const timer = setInterval(() => {
@@ -36,12 +60,6 @@ const VerifyEmailPage = () => {
     }
   };
 
-  // If user is already verified, redirect to home
-  if (user?.isVerified) {
-    navigate("/");
-    return null;
-  }
-
   return (
     <div className="container-custom py-16 max-w-md mx-auto">
       <div className="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -52,7 +70,7 @@ const VerifyEmailPage = () => {
         </div>
         <h1 className="font-serif text-2xl md:text-3xl font-bold mb-4">Verify Your Email</h1>
         <p className="text-muted-foreground mb-8">
-          We've sent a verification email to <strong>{user?.email}</strong>. 
+          We've sent a verification email to <strong>{email}</strong>. 
           Please check your inbox and click the verification link to activate your account.
         </p>
         

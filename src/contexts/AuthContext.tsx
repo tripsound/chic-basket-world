@@ -1,6 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -20,7 +21,7 @@ interface AuthContextType {
   sendVerificationEmail: (email: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
-  updateProfile: (profileData: any) => void;
+  updateProfile: (profileData: any) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -39,38 +40,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing user in localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('user');
+    setLoading(true);
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        fetchAndSetUser(session.user.id);
+      } else {
+        setUser(null);
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          await fetchAndSetUser(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const fetchAndSetUser = async (userId: string) => {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      
+      if (!userData?.user) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', profileError);
+      }
+      
+      setUser({
+        id: userData.user.id,
+        email: userData.user.email || '',
+        name: profileData?.full_name || userData.user.email?.split('@')[0] || '',
+        isVerified: userData.user.email_confirmed_at !== null,
+        phone: profileData?.phone || '',
+        address: profileData?.address || '',
+      });
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      // In a real app, this would be an API call to authenticate
-      // For demo, we'll simulate a successful login
-      const mockUser = {
-        id: 'usr_' + Math.random().toString(36).substring(2, 10),
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split('@')[0],
-        isVerified: true
-      };
+        password
+      });
       
-      // Set user in state and localStorage
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      if (error) throw error;
+      
       toast.success("Successfully logged in.");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      toast.error("Failed to login. Please try again.");
+      toast.error(error.message || "Failed to login. Please try again.");
       throw error;
     } finally {
       setLoading(false);
@@ -80,41 +128,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      // In a real app, this would be an API call to register
-      // For demo, we'll simulate a successful registration
-      const mockUser = {
-        id: 'usr_' + Math.random().toString(36).substring(2, 10),
-        email,
-        name,
-        isVerified: false
-      };
       
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      toast.success("Registration successful. Please verify your email.");
-    } catch (error) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Registration successful! Please check your email for verification link.");
+    } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error("Failed to register. Please try again.");
+      toast.error(error.message || "Failed to register. Please try again.");
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    toast.success("You have been logged out.");
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("You have been logged out.");
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      toast.error("Failed to log out. Please try again.");
+    }
   };
 
   const sendVerificationEmail = async (email: string) => {
     try {
-      // In a real app, this would send an actual email
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) throw error;
+      
       toast.success(`Verification email sent to ${email}`);
-      console.log(`Verification email would be sent to ${email}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending verification email:', error);
-      toast.error("Failed to send verification email. Please try again.");
+      toast.error(error.message || "Failed to send verification email. Please try again.");
       throw error;
     }
   };
@@ -129,35 +192,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const verifyEmail = async (token: string): Promise<boolean> => {
     try {
-      // In a real app, we'd validate the token with an API
-      // For demo, we'll just simulate success
-      if (user) {
-        const verifiedUser = { ...user, isVerified: true };
-        setUser(verifiedUser);
-        localStorage.setItem('user', JSON.stringify(verifiedUser));
-        toast.success("Email verified successfully!");
-        return true;
-      }
-      return false;
-    } catch (error) {
+      return true;
+    } catch (error: any) {
       console.error('Error verifying email:', error);
-      toast.error("Failed to verify email. Please try again.");
+      toast.error(error.message || "Failed to verify email. Please try again.");
       return false;
     }
   };
   
-  const updateProfile = (profileData: any) => {
+  const updateProfile = async (profileData: any) => {
     if (!user) return;
     
-    const updatedUser = {
-      ...user,
-      name: profileData.name || user.name,
-      phone: profileData.phone || user.phone,
-      address: profileData.address || user.address
-    };
-    
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileData.name || user.name,
+          phone: profileData.phone || user.phone,
+          address: profileData.address || user.address,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      await fetchAndSetUser(user.id);
+      
+      toast.success("Profile updated successfully");
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error(error.message || "Failed to update profile. Please try again.");
+    }
   };
 
   return (

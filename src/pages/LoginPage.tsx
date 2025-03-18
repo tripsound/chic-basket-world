@@ -31,10 +31,10 @@ const LoginPage = () => {
     try {
       setIsSubmitting(true);
       await login(formData.email, formData.password);
-      toast.success("Login successful");
       navigate(from);
     } catch (error) {
-      toast.error("Invalid email or password");
+      // Error is already handled in the login function
+      console.error("Login submission error:", error);
     } finally {
       setIsSubmitting(false);
     }

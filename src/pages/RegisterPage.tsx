@@ -36,10 +36,10 @@ const RegisterPage = () => {
     try {
       setIsSubmitting(true);
       await register(formData.name, formData.email, formData.password);
-      toast.success("Registration successful! Please verify your email.");
       navigate("/verify-email");
     } catch (error) {
-      toast.error("Registration failed. Please try again.");
+      // Error is already handled in the register function
+      console.error("Registration submission error:", error);
     } finally {
       setIsSubmitting(false);
     }
