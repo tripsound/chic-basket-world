@@ -44,14 +44,29 @@ const LoginPage = () => {
   const handleSubmit = async (values: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      await login(values.email, values.password);
       
-      // No need to display success toast here as it's handled by auth context
-      // We only navigate on successful login
-      navigate(from);
+      // Clear previous form errors
+      form.clearErrors();
+      
+      // Attempt to log in
+      const user = await login(values.email, values.password);
+      
+      if (user) {
+        navigate(from);
+      }
     } catch (error: any) {
       console.error("Login submission error:", error);
-      // Error is already handled in the login function
+      
+      // Set form-level error for authentication failures
+      if (error.message && error.message.includes('not confirmed')) {
+        // If email is not confirmed, show a specific message and option to verify
+        toast.error("Please verify your email before logging in", {
+          action: {
+            label: "Verify Email",
+            onClick: () => navigate(`/verify-email?email=${encodeURIComponent(values.email)}`),
+          },
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

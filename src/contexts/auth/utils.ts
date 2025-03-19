@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 import { toast } from "sonner";
@@ -16,7 +17,7 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (profileError && profileError.code !== 'PGRST116') {
       console.error('Error fetching profile:', profileError);
@@ -38,6 +39,14 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
 
 export const loginUser = async (email: string, password: string): Promise<{ user: any, error: any }> => {
   try {
+    // First check if there's a current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    // If there's already a session, sign out first to ensure clean login
+    if (sessionData.session) {
+      await supabase.auth.signOut();
+    }
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password

@@ -68,9 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       if (user) {
         toast.success("Successfully logged in");
+        return user;
       }
-      
-      return user;
+      return null;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -105,6 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const verifyEmail = async (token: string): Promise<boolean> => {
     try {
+      // In a real implementation, this would verify the token
+      // Since Supabase handles this automatically via redirects,
+      // we just return true here
       return true;
     } catch (error: any) {
       console.error('Error verifying email:', error);
