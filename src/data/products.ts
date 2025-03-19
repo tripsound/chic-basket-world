@@ -12,6 +12,9 @@ export interface Product {
   new: boolean;
   sale: boolean;
   salePrice?: number;
+  details?: string;
+  care?: string;
+  shipping?: string;
 }
 
 export const products: Product[] = [
