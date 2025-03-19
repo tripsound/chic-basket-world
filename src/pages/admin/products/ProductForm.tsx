@@ -147,10 +147,10 @@ const ProductForm = () => {
         if (error) throw error;
         toast.success("Product updated successfully");
       } else {
-        // Create new product
+        // Create new product - Fix here: don't wrap productData in an array for the insert operation
         const { error } = await supabase
           .from("products")
-          .insert([productData as unknown as Record<string, unknown>]);
+          .insert(productData);
 
         if (error) throw error;
         toast.success("Product created successfully");
