@@ -6,7 +6,8 @@ import {
   ShoppingBag, 
   User, 
   Menu, 
-  X 
+  X,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +98,17 @@ const Navbar = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/profile/orders">Order History</Link>
                   </DropdownMenuItem>
+                  {user.isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Admin Panel
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     Log out
@@ -173,6 +185,15 @@ const Navbar = () => {
                           <User className="h-5 w-5" />
                           <span>My Account</span>
                         </Link>
+                        {user.isAdmin && (
+                          <Link
+                            to="/admin"
+                            className="flex items-center space-x-2 text-base font-medium hover:text-accent transition-colors"
+                          >
+                            <Shield className="h-5 w-5" />
+                            <span>Admin Panel</span>
+                          </Link>
+                        )}
                         <Button onClick={logout} variant="outline" className="w-full">
                           Log out
                         </Button>

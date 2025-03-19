@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 import { toast } from "sonner";
@@ -22,11 +23,19 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
       console.error('Error fetching profile:', profileError);
     }
     
+    // Check if the user is an admin
+    const { data: adminData } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('email', userData.user.email)
+      .maybeSingle();
+    
     return {
       id: userData.user.id,
       email: userData.user.email || '',
       name: profileData?.full_name || userData.user.email?.split('@')[0] || '',
       isVerified: userData.user.email_confirmed_at !== null,
+      isAdmin: !!adminData,
       phone: profileData?.phone || '',
       address: profileData?.address || '',
     };
