@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 import { toast } from "sonner";
@@ -39,17 +38,27 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
 
 export const loginUser = async (email: string, password: string): Promise<void> => {
   try {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
     
     if (error) throw error;
     
-    toast.success("Successfully logged in.");
+    // Don't show a success toast here - it will be handled by the login page
+    console.log("Login successful:", data);
   } catch (error: any) {
     console.error('Login error:', error);
-    toast.error(error.message || "Failed to login. Please try again.");
+    
+    // Show specific error messages for common login issues
+    if (error.message.includes('Invalid login credentials')) {
+      toast.error("Invalid email or password. Please try again.");
+    } else if (error.message.includes('Email not confirmed')) {
+      toast.error("Please verify your email address before logging in.");
+    } else {
+      toast.error(error.message || "Failed to login. Please try again.");
+    }
+    
     throw error;
   }
 };

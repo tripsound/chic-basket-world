@@ -2,39 +2,55 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/auth"; // Updated import path
+import { useAuth } from "@/contexts/auth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage 
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Define login form schema with validation
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/";
-  
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Set up form with validation
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (values: LoginFormValues) => {
     try {
       setIsSubmitting(true);
-      await login(formData.email, formData.password);
+      await login(values.email, values.password);
+      toast.success("Successfully logged in");
       navigate(from);
-    } catch (error) {
-      // Error is already handled in the login function
+    } catch (error: any) {
       console.error("Login submission error:", error);
+      // Error is already handled in the login function, but we might want to add specific UI feedback here
     } finally {
       setIsSubmitting(false);
     }
@@ -48,41 +64,61 @@ const LoginPage = () => {
       </div>
       
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email Address</label>
-            <input
-              type="email"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
               name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-md"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="email"
+                      placeholder="your@email.com"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
+            
+            <FormField
+              control={form.control}
               name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-md"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="text-right">
-            <Link to="/forgot-password" className="text-sm text-accent hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-          
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Logging in..." : "Log In"}
-          </Button>
-        </form>
+            
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-sm text-accent hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Logging in..." : "Log In"}
+            </Button>
+          </form>
+        </Form>
         
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
