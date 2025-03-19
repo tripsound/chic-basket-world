@@ -4,7 +4,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   Form,
@@ -46,11 +45,13 @@ const LoginPage = () => {
     try {
       setIsSubmitting(true);
       await login(values.email, values.password);
-      toast.success("Successfully logged in");
+      
+      // No need to display success toast here as it's handled by auth context
+      // We only navigate on successful login
       navigate(from);
     } catch (error: any) {
       console.error("Login submission error:", error);
-      // Error is already handled in the login function, but we might want to add specific UI feedback here
+      // Error is already handled in the login function
     } finally {
       setIsSubmitting(false);
     }

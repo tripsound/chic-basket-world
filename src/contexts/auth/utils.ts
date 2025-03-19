@@ -36,7 +36,7 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
   }
 };
 
-export const loginUser = async (email: string, password: string): Promise<void> => {
+export const loginUser = async (email: string, password: string): Promise<{ user: any, error: any }> => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -45,8 +45,8 @@ export const loginUser = async (email: string, password: string): Promise<void> 
     
     if (error) throw error;
     
-    // Don't show a success toast here - it will be handled by the login page
     console.log("Login successful:", data);
+    return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Login error:', error);
     
@@ -59,7 +59,7 @@ export const loginUser = async (email: string, password: string): Promise<void> 
       toast.error(error.message || "Failed to login. Please try again.");
     }
     
-    throw error;
+    return { user: null, error };
   }
 };
 

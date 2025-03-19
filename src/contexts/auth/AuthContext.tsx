@@ -10,6 +10,7 @@ import {
   sendVerificationEmail as sendEmail,
   updateUserProfile
 } from './utils';
+import { toast } from "sonner";
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -20,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     setLoading(true);
 
+    // Check for existing session on component mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         fetchAndSetUser(session.user.id);
@@ -29,8 +31,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
         if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           await fetchAndSetUser(session.user.id);
         } else if (event === 'SIGNED_OUT') {
@@ -49,6 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userData = await fetchUserProfile(userId);
       setUser(userData);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
     } finally {
       setLoading(false);
     }
@@ -57,7 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      await loginUser(email, password);
+      const { user, error } = await loginUser(email, password);
+      
+      if (error) throw error;
+      if (user) {
+        toast.success("Successfully logged in");
+      }
+      
+      return user;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
     } finally {
       setLoading(false);
     }
