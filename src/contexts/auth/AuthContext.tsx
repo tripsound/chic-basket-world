@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContextType, User } from './types';
@@ -60,15 +59,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User | null> => {
     setLoading(true);
     try {
-      const { user, error } = await loginUser(email, password);
+      const { user: authUser, error } = await loginUser(email, password);
       
       if (error) throw error;
-      if (user) {
+      if (authUser) {
         toast.success("Successfully logged in");
-        return user;
+        // Fetch the user profile to return the full User object
+        const userData = await fetchUserProfile(authUser.id);
+        return userData;
       }
       return null;
     } catch (error) {
