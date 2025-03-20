@@ -30,19 +30,23 @@ const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      let query = supabase.from("products").select("*");
-      
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from("products")
+        .select("*");
       
       if (error) throw error;
       
-      setProducts(data as Product[]);
-    } catch (error) {
+      setProducts(data || []);
+    } catch (error: any) {
       console.error("Error fetching products:", error);
+      setError("Failed to load products");
       toast.error("Failed to load products");
     } finally {
       setLoading(false);
@@ -75,8 +79,8 @@ const ProductsPage = () => {
   };
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.toLowerCase())
+    product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -103,6 +107,11 @@ const ProductsPage = () => {
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12 bg-white rounded-md shadow">
+          <p className="text-lg text-red-500 mb-4">{error}</p>
+          <Button onClick={fetchProducts}>Retry</Button>
         </div>
       ) : (
         <>

@@ -20,6 +20,7 @@ const ProductForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -45,6 +46,8 @@ const ProductForm = () => {
       if (!id || id === "new") return;
 
       setLoading(true);
+      setFetchError(null);
+      
       try {
         const { data, error } = await supabase
           .from("products")
@@ -88,24 +91,25 @@ const ProductForm = () => {
           }
 
           form.reset({
-            name: data.name,
-            description: data.description,
-            price: data.price.toString(),
+            name: data.name || "",
+            description: data.description || "",
+            price: data.price?.toString() || "",
             sale_price: data.sale_price ? data.sale_price.toString() : "",
-            category: data.category,
+            category: data.category || "",
             colors: processedColors,
             sizes: processedSizes,
             images: Array.isArray(data.images) ? data.images : [],
-            details: data.details,
-            care: data.care,
-            shipping: data.shipping,
-            featured: data.featured,
-            new: data.new,
-            sale: data.sale,
+            details: data.details || "",
+            care: data.care || "",
+            shipping: data.shipping || "",
+            featured: !!data.featured,
+            new: !!data.new,
+            sale: !!data.sale,
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching product:", error);
+        setFetchError(error.message || "Failed to load product data");
         toast.error("Failed to load product data");
       } finally {
         setLoading(false);
@@ -118,8 +122,15 @@ const ProductForm = () => {
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Basic validation
+      if (!values.name || !values.price || !values.category || !values.description) {
+        toast.error("Please fill in all required fields");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Convert form values to the format expected by Supabase
-      const productData: ProductData = {
+      const productData: Partial<ProductData> = {
         name: values.name,
         description: values.description,
         price: parseFloat(values.price),
@@ -147,7 +158,7 @@ const ProductForm = () => {
         if (error) throw error;
         toast.success("Product updated successfully");
       } else {
-        // Create new product - Fix here: don't wrap productData in an array for the insert operation
+        // Create new product
         const { error } = await supabase
           .from("products")
           .insert(productData);
@@ -157,9 +168,9 @@ const ProductForm = () => {
       }
 
       navigate("/admin/products");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving product:", error);
-      toast.error("Failed to save product");
+      toast.error(error.message || "Failed to save product");
     } finally {
       setIsSubmitting(false);
     }
@@ -169,6 +180,22 @@ const ProductForm = () => {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
+
+  if (fetchError && id && id !== "new") {
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg text-red-500 mb-4">{fetchError}</p>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/admin/products")}
+          className="mr-4"
+        >
+          Back to Products
+        </Button>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );
   }
