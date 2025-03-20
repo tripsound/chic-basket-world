@@ -14,7 +14,7 @@ export interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<User | null>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   sendVerificationEmail: (email: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;

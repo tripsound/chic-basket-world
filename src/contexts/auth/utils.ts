@@ -45,7 +45,6 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
   }
 };
 
-// Make sure the loginUser function returns the expected type
 export const loginUser = async (email: string, password: string): Promise<{ user: any, error: any }> => {
   try {
     // First check if there's a current session
