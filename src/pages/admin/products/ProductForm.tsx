@@ -129,8 +129,16 @@ const ProductForm = () => {
         return;
       }
 
+      // Ensure all required fields have values
+      if (!values.details || !values.care || !values.shipping) {
+        toast.error("Please fill in all required fields (details, care, shipping)");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Convert form values to the format expected by Supabase
-      const productData: Partial<ProductData> = {
+      // Making sure all required fields are present
+      const productData = {
         name: values.name,
         description: values.description,
         price: parseFloat(values.price),
