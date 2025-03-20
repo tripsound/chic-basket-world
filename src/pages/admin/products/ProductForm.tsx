@@ -12,7 +12,7 @@ import { ImageManager } from "./components/ImageManager";
 import { ColorManager } from "./components/ColorManager";
 import { SizeManager } from "./components/SizeManager";
 import { AdditionalInfoForm } from "./components/AdditionalInfoForm";
-import { FormValues, ColorSize, ProductData } from "./types";
+import { FormValues, ColorSize } from "./types";
 import { Json } from "@/integrations/supabase/types";
 
 const ProductForm = () => {
@@ -136,8 +136,27 @@ const ProductForm = () => {
         return;
       }
 
+      // Validate that colors and sizes are added
+      if (values.colors.length === 0) {
+        toast.error("Please add at least one color");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (values.sizes.length === 0) {
+        toast.error("Please add at least one size");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate that images are added
+      if (values.images.length === 0) {
+        toast.error("Please add at least one product image");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Convert form values to the format expected by Supabase
-      // Making sure all required fields are present
       const productData = {
         name: values.name,
         description: values.description,
@@ -163,7 +182,10 @@ const ProductForm = () => {
           .update(productData)
           .eq("id", id);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error:", error);
+          throw new Error(error.message || "Failed to update product");
+        }
         toast.success("Product updated successfully");
       } else {
         // Create new product
@@ -171,7 +193,10 @@ const ProductForm = () => {
           .from("products")
           .insert(productData);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error:", error);
+          throw new Error(error.message || "Failed to create product");
+        }
         toast.success("Product created successfully");
       }
 
