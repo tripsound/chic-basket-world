@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth";
@@ -26,12 +26,12 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/";
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
   // Set up form with validation
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -40,8 +40,17 @@ const LoginPage = () => {
       password: "",
     },
   });
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      navigate(from, { replace: true });
+    }
+  }, [user, loading, navigate, from]);
 
   const handleSubmit = async (values: LoginFormValues) => {
+    if (isSubmitting) return;
+    
     try {
       setIsSubmitting(true);
       
@@ -52,7 +61,7 @@ const LoginPage = () => {
       const user = await login(values.email, values.password);
       
       if (user) {
-        navigate(from);
+        navigate(from, { replace: true });
       }
     } catch (error: any) {
       console.error("Login submission error:", error);
@@ -72,6 +81,18 @@ const LoginPage = () => {
     }
   };
 
+  // Don't render the form while checking authentication state
+  if (loading) {
+    return (
+      <div className="container-custom py-16 max-w-md mx-auto">
+        <div className="text-center">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Only render the login form if not authenticated
   return (
     <div className="container-custom py-16 max-w-md mx-auto">
       <div className="text-center mb-8">

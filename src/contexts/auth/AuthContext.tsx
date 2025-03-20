@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContextType, User } from './types';
 import { 
@@ -17,21 +17,16 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const authStateInitialized = useRef(false);
 
   useEffect(() => {
+    // Only set up auth state listeners once
+    if (authStateInitialized.current) return;
+    
     setLoading(true);
+    authStateInitialized.current = true;
 
-    // Check for existing session on component mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        fetchAndSetUser(session.user.id);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    // Set up auth state change listener
+    // Set up auth state change listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
@@ -39,10 +34,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await fetchAndSetUser(session.user.id);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          setLoading(false);
+        } else if (event === 'INITIAL_SESSION') {
+          // Only set loading to false if there's no session
+          if (!session) {
+            setLoading(false);
+          }
         }
-        setLoading(false);
       }
     );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        fetchAndSetUser(session.user.id);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    }).catch(error => {
+      console.error("Error getting session:", error);
+      setLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
