@@ -1,9 +1,6 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Form } from "@/components/ui/form";
@@ -12,16 +9,14 @@ import { ImageManager } from "./components/ImageManager";
 import { ColorManager } from "./components/ColorManager";
 import { SizeManager } from "./components/SizeManager";
 import { AdditionalInfoForm } from "./components/AdditionalInfoForm";
-import { FormValues, ColorSize } from "./types";
-import { Json } from "@/integrations/supabase/types";
+import { FormValues } from "./types";
+import { useProductData } from "./hooks/useProductData";
+import { useProductForm } from "./hooks/useProductForm";
 
 const ProductForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
+  
   const form = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -41,173 +36,9 @@ const ProductForm = () => {
     },
   });
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id || id === "new") return;
-
-      setLoading(true);
-      setFetchError(null);
-      
-      try {
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (error) throw error;
-
-        if (data) {
-          // Process colors and sizes to ensure they're in the correct format
-          const processedColors: ColorSize[] = [];
-          const processedSizes: ColorSize[] = [];
-
-          // Handle colors which can be array of objects or array of strings
-          if (Array.isArray(data.colors)) {
-            data.colors.forEach((color: any) => {
-              if (typeof color === 'string') {
-                processedColors.push({ name: color, available: true });
-              } else if (typeof color === 'object' && color !== null) {
-                processedColors.push({
-                  name: color.name || '',
-                  available: color.available === undefined ? true : color.available
-                });
-              }
-            });
-          }
-
-          // Handle sizes which can be array of objects or array of strings
-          if (Array.isArray(data.sizes)) {
-            data.sizes.forEach((size: any) => {
-              if (typeof size === 'string') {
-                processedSizes.push({ name: size, available: true });
-              } else if (typeof size === 'object' && size !== null) {
-                processedSizes.push({
-                  name: size.name || '',
-                  available: size.available === undefined ? true : size.available
-                });
-              }
-            });
-          }
-
-          form.reset({
-            name: data.name || "",
-            description: data.description || "",
-            price: data.price?.toString() || "",
-            sale_price: data.sale_price ? data.sale_price.toString() : "",
-            category: data.category || "",
-            colors: processedColors,
-            sizes: processedSizes,
-            images: Array.isArray(data.images) ? data.images : [],
-            details: data.details || "",
-            care: data.care || "",
-            shipping: data.shipping || "",
-            featured: !!data.featured,
-            new: !!data.new,
-            sale: !!data.sale,
-          });
-        }
-      } catch (error: any) {
-        console.error("Error fetching product:", error);
-        setFetchError(error.message || "Failed to load product data");
-        toast.error("Failed to load product data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id, form]);
-
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
-    try {
-      // Basic validation
-      if (!values.name || !values.price || !values.category || !values.description) {
-        toast.error("Please fill in all required fields");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Ensure all required fields have values
-      if (!values.details || !values.care || !values.shipping) {
-        toast.error("Please fill in all required fields (details, care, shipping)");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Validate that colors and sizes are added
-      if (values.colors.length === 0) {
-        toast.error("Please add at least one color");
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (values.sizes.length === 0) {
-        toast.error("Please add at least one size");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Validate that images are added
-      if (values.images.length === 0) {
-        toast.error("Please add at least one product image");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Convert form values to the format expected by Supabase
-      const productData = {
-        name: values.name,
-        description: values.description,
-        price: parseFloat(values.price),
-        sale_price: values.sale_price ? parseFloat(values.sale_price) : null,
-        category: values.category,
-        colors: values.colors as unknown as Json,
-        sizes: values.sizes as unknown as Json,
-        images: values.images,
-        details: values.details,
-        care: values.care,
-        shipping: values.shipping,
-        featured: values.featured,
-        new: values.new,
-        sale: values.sale,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (id && id !== "new") {
-        // Update existing product
-        const { error } = await supabase
-          .from("products")
-          .update(productData)
-          .eq("id", id);
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(error.message || "Failed to update product");
-        }
-        toast.success("Product updated successfully");
-      } else {
-        // Create new product
-        const { error } = await supabase
-          .from("products")
-          .insert(productData);
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(error.message || "Failed to create product");
-        }
-        toast.success("Product created successfully");
-      }
-
-      navigate("/admin/products");
-    } catch (error: any) {
-      console.error("Error saving product:", error);
-      toast.error(error.message || "Failed to save product");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Use our custom hooks
+  const { loading, fetchError } = useProductData(form, id);
+  const { isSubmitting, onSubmit } = useProductForm(form, id);
 
   if (loading) {
     return (
