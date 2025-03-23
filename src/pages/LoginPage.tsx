@@ -16,6 +16,7 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import LoadingState from "@/components/product/LoadingState";
 
 // Define login form schema with validation
 const loginSchema = z.object({
@@ -32,6 +33,7 @@ const LoginPage = () => {
   const from = location.state?.from || "/";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [showLoading, setShowLoading] = useState(true);
   
   // Set up form with validation
   const form = useForm<LoginFormValues>({
@@ -41,6 +43,15 @@ const LoginPage = () => {
       password: "",
     },
   });
+  
+  // Control initial loading state - exactly 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
   
   // Redirect if already logged in
   useEffect(() => {
@@ -85,6 +96,11 @@ const LoginPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading state for exactly 2 seconds
+  if (showLoading) {
+    return <LoadingState />;
+  }
 
   // Only render the loading indicator during initial loading
   if (loading && !initialLoadComplete) {
