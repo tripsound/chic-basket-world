@@ -2,13 +2,6 @@
 import { Link } from "react-router-dom";
 import { Product } from "@/data/products";
 import { ArrowRight } from "lucide-react";
-import { 
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 interface RelatedProductsProps {
   products: Product[];
@@ -21,9 +14,9 @@ const RelatedProducts = ({ products, currentProductId }: RelatedProductsProps) =
   }
   
   return (
-    <div className="py-12 border-t">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-serif font-bold">You might also like</h2>
+    <div className="mt-16 pt-12 border-t">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-bold">You May Also Like</h2>
         <Link 
           to="/products" 
           className="flex items-center text-sm text-accent hover:underline"
@@ -33,57 +26,63 @@ const RelatedProducts = ({ products, currentProductId }: RelatedProductsProps) =
         </Link>
       </div>
       
-      <Carousel className="w-full">
-        <CarouselContent className="-ml-4">
-          {products.map((product) => (
-            <CarouselItem key={product.id} className="pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-              <Link 
-                to={`/products/${product.id}`}
-                className="group block overflow-hidden transition-all hover:shadow-lg rounded-lg bg-white"
-              >
-                <div className="aspect-[3/4] relative overflow-hidden">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {products.map((product) => (
+          <Link 
+            key={product.id}
+            to={`/products/${product.id}`}
+            className="group block overflow-hidden transition-all hover:shadow rounded-sm bg-white"
+          >
+            <div className="aspect-square relative overflow-hidden">
+              <img
+                src={product.images[0]}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+              
+              {/* Product badge (Sale or New) */}
+              {product.sale && (
+                <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-0.5 text-xs font-medium">
+                  Sale
+                </span>
+              )}
+              
+              {product.new && !product.sale && (
+                <span className="absolute top-2 left-2 bg-black text-white px-2 py-0.5 text-xs font-medium">
+                  New
+                </span>
+              )}
+            </div>
+            <div className="p-3">
+              <h3 className="font-medium text-sm text-gray-900 mb-1">
+                {product.name}
+              </h3>
+              <div className="flex items-center">
+                {product.sale && product.salePrice ? (
+                  <>
+                    <span className="font-medium text-red-500">${product.salePrice.toFixed(2)}</span>
+                    <span className="ml-2 text-xs text-gray-500 line-through">
+                      ${product.price.toFixed(2)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-medium text-gray-900">${product.price.toFixed(2)}</span>
+                )}
+              </div>
+              
+              {/* Simple rating display */}
+              <div className="flex mt-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span 
+                    key={star} 
+                    className={`block w-2 h-2 rounded-full mr-0.5 ${star <= 3 ? 'bg-gray-400' : 'bg-gray-200'}`}
                   />
-                  
-                  {product.sale && (
-                    <span className="absolute top-4 left-4 bg-accent text-white px-3 py-1 rounded-full text-xs font-medium">
-                      Sale
-                    </span>
-                  )}
-                  
-                  {product.new && !product.sale && (
-                    <span className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
-                      New
-                    </span>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-base md:text-lg mb-1 group-hover:text-accent transition-colors">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center">
-                    {product.sale && product.salePrice ? (
-                      <>
-                        <span className="font-medium text-accent">${product.salePrice.toFixed(2)}</span>
-                        <span className="ml-2 text-sm text-muted-foreground line-through">
-                          ${product.price.toFixed(2)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="font-medium">${product.price.toFixed(2)}</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious className="hidden md:flex left-0" />
-        <CarouselNext className="hidden md:flex right-0" />
-      </Carousel>
+                ))}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 };
