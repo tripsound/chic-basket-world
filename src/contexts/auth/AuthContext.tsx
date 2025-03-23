@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContextType, User } from './types';
@@ -31,7 +30,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
         if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          await fetchAndSetUser(session.user.id);
+          try {
+            await fetchAndSetUser(session.user.id);
+          } catch (error) {
+            console.error("Error fetching user after auth state change:", error);
+            setLoading(false);
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setLoading(false);
@@ -68,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
     } catch (error) {
       console.error("Error fetching user profile:", error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -81,7 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       if (authUser) {
         toast.success("Successfully logged in");
-        // Fetch the user profile to return the full User object
         const userData = await fetchUserProfile(authUser.id);
         return userData;
       }
@@ -120,9 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const verifyEmail = async (token: string): Promise<boolean> => {
     try {
-      // In a real implementation, this would verify the token
-      // Since Supabase handles this automatically via redirects,
-      // we just return true here
       return true;
     } catch (error: any) {
       console.error('Error verifying email:', error);

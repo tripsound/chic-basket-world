@@ -31,6 +31,7 @@ const LoginPage = () => {
   const location = useLocation();
   const from = location.state?.from || "/";
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   // Set up form with validation
   const form = useForm<LoginFormValues>({
@@ -43,8 +44,12 @@ const LoginPage = () => {
   
   // Redirect if already logged in
   useEffect(() => {
-    if (user && !loading) {
-      navigate(from, { replace: true });
+    // Only check for redirect after initial loading is complete
+    if (!loading) {
+      setInitialLoadComplete(true);
+      if (user) {
+        navigate(from, { replace: true });
+      }
     }
   }, [user, loading, navigate, from]);
 
@@ -81,8 +86,8 @@ const LoginPage = () => {
     }
   };
 
-  // Don't render the form while checking authentication state
-  if (loading) {
+  // Only render the loading indicator during initial loading
+  if (loading && !initialLoadComplete) {
     return (
       <div className="container-custom py-16 max-w-md mx-auto">
         <div className="text-center">
