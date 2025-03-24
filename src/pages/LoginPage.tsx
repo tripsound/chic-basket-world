@@ -27,13 +27,12 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
-  const { login, user, loading } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/";
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  const [showLoading, setShowLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   
   // Set up form with validation
   const form = useForm<LoginFormValues>({
@@ -44,10 +43,10 @@ const LoginPage = () => {
     },
   });
   
-  // Control initial loading state - exactly 2 seconds
+  // Control initial loading state - limit to maximum 2 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShowLoading(false);
+      setInitialLoading(false);
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -55,14 +54,13 @@ const LoginPage = () => {
   
   // Redirect if already logged in
   useEffect(() => {
-    // Only check for redirect after initial loading is complete
-    if (!loading) {
-      setInitialLoadComplete(true);
-      if (user) {
-        navigate(from, { replace: true });
-      }
+    if (!authLoading && user) {
+      navigate(from, { replace: true });
+    } else if (!authLoading) {
+      // Once auth loading is done, we can stop our initial loading if it's still active
+      setInitialLoading(false);
     }
-  }, [user, loading, navigate, from]);
+  }, [user, authLoading, navigate, from]);
 
   const handleSubmit = async (values: LoginFormValues) => {
     if (isSubmitting) return;
@@ -105,8 +103,8 @@ const LoginPage = () => {
     }
   };
 
-  // Show loading state for exactly 2 seconds
-  if (showLoading) {
+  // Show loading state while either auth is loading or during initial load
+  if (initialLoading) {
     return <LoadingState />;
   }
 
