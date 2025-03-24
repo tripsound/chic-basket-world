@@ -77,6 +77,7 @@ const LoginPage = () => {
       const user = await login(values.email, values.password);
       
       if (user) {
+        // Immediately redirect after successful login
         navigate(from, { replace: true });
       }
     } catch (error: any) {
