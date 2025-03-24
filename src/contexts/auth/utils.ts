@@ -68,14 +68,19 @@ export const loginUser = async (email: string, password: string): Promise<{ user
     console.error('Login error:', error);
     
     // Show specific error messages for common login issues
-    if (error.message.includes('Invalid login credentials')) {
-      toast.error("Invalid email or password. Please try again.");
-    } else if (error.message.includes('Email not confirmed')) {
-      toast.error("Please verify your email address before logging in.");
-    } else {
-      toast.error(error.message || "Failed to login. Please try again.");
+    let errorMessage = "Failed to login. Please try again.";
+    
+    if (error.message) {
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = "Please verify your email address before logging in.";
+      } else {
+        errorMessage = error.message;
+      }
     }
     
+    toast.error(errorMessage);
     return { user: null, error };
   }
 };

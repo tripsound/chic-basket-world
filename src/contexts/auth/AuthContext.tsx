@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContextType, User } from './types';
@@ -79,22 +80,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string): Promise<User | null> => {
-    setLoading(true);
     try {
       const { user: authUser, error } = await loginUser(email, password);
       
       if (error) throw error;
       if (authUser) {
-        toast.success("Successfully logged in");
+        // Fetch the user profile immediately after successful login
         const userData = await fetchUserProfile(authUser.id);
+        setUser(userData); // Update the user state
         return userData;
       }
       return null;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -109,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await logoutUser();
+    // The auth state change handler will update our state
   };
 
   const sendVerificationEmail = async (email: string) => {

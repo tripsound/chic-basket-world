@@ -74,24 +74,31 @@ const LoginPage = () => {
       form.clearErrors();
       
       // Attempt to log in
-      const user = await login(values.email, values.password);
+      const result = await login(values.email, values.password);
       
-      if (user) {
-        // Immediately redirect after successful login
+      if (result) {
+        toast.success("Successfully logged in");
+        // Force navigation immediately to the destination
         navigate(from, { replace: true });
+      } else {
+        // If login returned null but no error was thrown
+        toast.error("Login failed. Please check your credentials.");
       }
     } catch (error: any) {
       console.error("Login submission error:", error);
       
       // Set form-level error for authentication failures
       if (error.message && error.message.includes('not confirmed')) {
-        // If email is not confirmed, show a specific message and option to verify
+        // If email is not verified, show a specific message and option to verify
         toast.error("Please verify your email before logging in", {
           action: {
             label: "Verify Email",
             onClick: () => navigate(`/verify-email?email=${encodeURIComponent(values.email)}`),
           },
         });
+      } else {
+        // General login error
+        toast.error(error.message || "Login failed. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
