@@ -1,28 +1,31 @@
-
 import { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormLabel } from "@/components/ui/form";
 import { Plus } from "lucide-react";
 import { FormValues } from "../types";
 import { ColorItem } from "./ColorItem";
+import { useState, useCallback } from "react";
 
 interface ColorManagerProps {
   form: UseFormReturn<FormValues>;
 }
 
 export const ColorManager = ({ form }: ColorManagerProps) => {
-  const addColor = () => {
-    const colors = form.getValues("colors") || [];
-    form.setValue("colors", [...colors, { name: "", available: true }]);
-  };
+  const [colors, setColors] = useState<Array<{ name: string; available: boolean }>>(
+    form.getValues("colors") || []
+  );
 
-  const removeColor = (index: number) => {
-    const colors = form.getValues("colors");
-    form.setValue(
-      "colors",
-      colors.filter((_, i) => i !== index)
-    );
-  };
+  const addColor = useCallback(() => {
+    const newColors = [...colors, { name: "", available: true }];
+    setColors(newColors);
+    form.setValue("colors", newColors);
+  }, [colors, form]);
+
+  const removeColor = useCallback((index: number) => {
+    const newColors = colors.filter((_, i) => i !== index);
+    setColors(newColors);
+    form.setValue("colors", newColors);
+  }, [colors, form]);
 
   return (
     <div>
@@ -39,7 +42,7 @@ export const ColorManager = ({ form }: ColorManagerProps) => {
         </Button>
       </div>
 
-      {form.getValues("colors")?.map((color, index) => (
+      {colors.map((color, index) => (
         <ColorItem 
           key={index} 
           index={index} 
@@ -48,7 +51,7 @@ export const ColorManager = ({ form }: ColorManagerProps) => {
         />
       ))}
       
-      {form.getValues("colors")?.length === 0 && (
+      {colors.length === 0 && (
         <p className="text-sm text-gray-500 italic">No colors added yet</p>
       )}
     </div>
