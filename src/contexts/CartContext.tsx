@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/auth'; // Updated import path
+import { useAuth } from '@/contexts/auth';
 import { toast } from "sonner";
 
 export interface CartItem {
