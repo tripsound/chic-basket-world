@@ -102,17 +102,6 @@ const LoginPage = () => {
     return <LoadingState />;
   }
 
-  // Only render the loading indicator during initial loading
-  if (loading && !initialLoadComplete) {
-    return (
-      <div className="container-custom py-16 max-w-md mx-auto">
-        <div className="text-center">
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-  
   // Only render the login form if not authenticated
   return (
     <div className="container-custom py-16 max-w-md mx-auto">
