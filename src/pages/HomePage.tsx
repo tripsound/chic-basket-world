@@ -15,8 +15,8 @@ const HomePage = () => {
       <section className="relative h-[80vh] flex items-center">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1550597355-8d0e5f0e1c03?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
-            alt="Fashion Hero"
+            src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8ZmFzaGlvbiUyMG1vZGVsfGVufDB8fDB8fHww"
+            alt="Fashion Model"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-black/40" />
@@ -47,7 +47,7 @@ const HomePage = () => {
           <h2 className="font-serif text-3xl md:text-4xl font-bold mb-12 text-center">Shop by Category</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { name: "Women", image: "https://images.unsplash.com/photo-1513094735237-8f2714d57c4c?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3", link: "/products?category=women" },
+              { name: "Women", image: "https://images.unsplash.com/photo-1619086303291-0ef7699e4b31?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZmFzaGlvbiUyMG1vZGVsfGVufDB8fDB8fHww", link: "/products?category=women" },
               { name: "Men", image: "https://images.unsplash.com/photo-1516826957135-700dedea698c?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3", link: "/products?category=men" },
               { name: "Shoes", image: "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3", link: "/products?category=shoes" },
               { name: "Accessories", image: "https://images.unsplash.com/photo-1624623278313-a930126a11c3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3", link: "/products?category=accessories" },

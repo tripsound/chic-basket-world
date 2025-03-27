@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,8 @@ const ProductForm = () => {
   const { loading, fetchError } = useProductData(form, id);
   const { isSubmitting, onSubmit } = useProductForm(form, id);
 
-  if (loading) {
+  // Only show loading spinner when editing existing product
+  if (id && id !== "new" && loading) {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
