@@ -1,13 +1,91 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { products, filterProducts } from "@/data/products";
+import { supabase } from "@/integrations/supabase/client";
+import { Product } from "@/data/products";
 
 const HomePage = () => {
-  const [featuredProducts, setFeaturedProducts] = useState(products.filter(p => p.featured).slice(0, 4));
-  const [newArrivals, setNewArrivals] = useState(products.filter(p => p.new).slice(0, 4));
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        // Fetch featured products
+        const { data: featuredData, error: featuredError } = await supabase
+          .from("products")
+          .select("*")
+          .eq("featured", true)
+          .limit(4);
+
+        if (featuredError) {
+          console.error("Error fetching featured products:", featuredError);
+        } else {
+          // Transform the data to match the Product interface
+          const mappedFeatured: Product[] = featuredData.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: parseFloat(String(item.price)),
+            category: item.category as 'men' | 'women' | 'shoes' | 'accessories',
+            images: item.images,
+            colors: Array.isArray(item.colors)
+              ? item.colors.map((c: any) => typeof c === 'object' ? c.name : c)
+              : [],
+            sizes: Array.isArray(item.sizes)
+              ? item.sizes.map((s: any) => typeof s === 'object' ? s.name : s)
+              : [],
+            featured: Boolean(item.featured),
+            new: Boolean(item.new),
+            sale: Boolean(item.sale),
+            salePrice: item.sale_price ? parseFloat(String(item.sale_price)) : undefined,
+          }));
+          setFeaturedProducts(mappedFeatured);
+        }
+
+        // Fetch new products
+        const { data: newData, error: newError } = await supabase
+          .from("products")
+          .select("*")
+          .eq("new", true)
+          .limit(4);
+
+        if (newError) {
+          console.error("Error fetching new products:", newError);
+        } else {
+          // Transform the data to match the Product interface
+          const mappedNew: Product[] = newData.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: parseFloat(String(item.price)),
+            category: item.category as 'men' | 'women' | 'shoes' | 'accessories',
+            images: item.images,
+            colors: Array.isArray(item.colors)
+              ? item.colors.map((c: any) => typeof c === 'object' ? c.name : c)
+              : [],
+            sizes: Array.isArray(item.sizes)
+              ? item.sizes.map((s: any) => typeof s === 'object' ? s.name : s)
+              : [],
+            featured: Boolean(item.featured),
+            new: Boolean(item.new),
+            sale: Boolean(item.sale),
+            salePrice: item.sale_price ? parseFloat(String(item.sale_price)) : undefined,
+          }));
+          setNewArrivals(mappedNew);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <div>
@@ -87,46 +165,70 @@ const HomePage = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/products/${product.id}`}
-                className="group block overflow-hidden transition-all hover:shadow-lg rounded-lg bg-white"
-              >
-                <div className="aspect-[3/4] relative overflow-hidden">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  
-                  {product.sale && (
-                    <span className="absolute top-4 left-4 bg-accent text-white px-3 py-1 rounded-full text-xs font-medium">
-                      Sale
-                    </span>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-lg mb-1 group-hover:text-accent transition-colors">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center">
-                    {product.sale && product.salePrice ? (
-                      <>
-                        <span className="font-medium text-accent">${product.salePrice.toFixed(2)}</span>
-                        <span className="ml-2 text-sm text-muted-foreground line-through">
-                          ${product.price.toFixed(2)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="font-medium">${product.price.toFixed(2)}</span>
-                    )}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="bg-white rounded-lg animate-pulse">
+                  <div className="aspect-[3/4] bg-gray-200"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500">No featured products available.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredProducts.map((product) => (
+                <Link
+                  key={product.id}
+                  to={`/products/${product.id}`}
+                  className="group block overflow-hidden transition-all hover:shadow-lg rounded-lg bg-white"
+                >
+                  <div className="aspect-[3/4] relative overflow-hidden">
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
+                    
+                    {product.sale && (
+                      <span className="absolute top-4 left-4 bg-accent text-white px-3 py-1 rounded-full text-xs font-medium">
+                        Sale
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-medium text-lg mb-1 group-hover:text-accent transition-colors">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-center">
+                      {product.sale && product.salePrice ? (
+                        <>
+                          <span className="font-medium text-accent">${product.salePrice.toFixed(2)}</span>
+                          <span className="ml-2 text-sm text-muted-foreground line-through">
+                            ${product.price.toFixed(2)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="font-medium">${product.price.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -143,44 +245,68 @@ const HomePage = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {newArrivals.map((product) => (
-              <Link
-                key={product.id}
-                to={`/products/${product.id}`}
-                className="group block overflow-hidden transition-all hover:shadow-lg rounded-lg bg-white"
-              >
-                <div className="aspect-[3/4] relative overflow-hidden">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  
-                  <span className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
-                    New
-                  </span>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-medium text-lg mb-1 group-hover:text-accent transition-colors">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center">
-                    {product.sale && product.salePrice ? (
-                      <>
-                        <span className="font-medium text-accent">${product.salePrice.toFixed(2)}</span>
-                        <span className="ml-2 text-sm text-muted-foreground line-through">
-                          ${product.price.toFixed(2)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="font-medium">${product.price.toFixed(2)}</span>
-                    )}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="bg-white rounded-lg animate-pulse">
+                  <div className="aspect-[3/4] bg-gray-200"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : newArrivals.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500">No new products available.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {newArrivals.map((product) => (
+                <Link
+                  key={product.id}
+                  to={`/products/${product.id}`}
+                  className="group block overflow-hidden transition-all hover:shadow-lg rounded-lg bg-white"
+                >
+                  <div className="aspect-[3/4] relative overflow-hidden">
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
+                    
+                    <span className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
+                      New
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-medium text-lg mb-1 group-hover:text-accent transition-colors">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-center">
+                      {product.sale && product.salePrice ? (
+                        <>
+                          <span className="font-medium text-accent">${product.salePrice.toFixed(2)}</span>
+                          <span className="ml-2 text-sm text-muted-foreground line-through">
+                            ${product.price.toFixed(2)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="font-medium">${product.price.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

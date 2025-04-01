@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Filter, CheckCheck, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { products, filterProducts } from "@/data/products";
+import { supabase } from "@/integrations/supabase/client";
+import { Product } from "@/data/products";
 import {
   Sheet,
   SheetContent,
@@ -23,7 +23,9 @@ const ProductsPage = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   
-  const [filteredProducts, setFilteredProducts] = useState(products);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(
     searchParams.get("category") || undefined
   );
@@ -36,7 +38,50 @@ const ProductsPage = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [sortOption, setSortOption] = useState("default");
 
-  // Update filters when URL params change
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*");
+        
+        if (error) {
+          console.error("Error fetching products:", error);
+          throw error;
+        }
+
+        if (data) {
+          const mappedProducts: Product[] = data.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: parseFloat(String(item.price)),
+            category: item.category as 'men' | 'women' | 'shoes' | 'accessories',
+            images: item.images,
+            colors: Array.isArray(item.colors)
+              ? item.colors.map((c: any) => typeof c === 'object' ? c.name : c)
+              : [],
+            sizes: Array.isArray(item.sizes)
+              ? item.sizes.map((s: any) => typeof s === 'object' ? s.name : s)
+              : [],
+            featured: Boolean(item.featured),
+            new: Boolean(item.new),
+            sale: Boolean(item.sale),
+            salePrice: item.sale_price ? parseFloat(String(item.sale_price)) : undefined,
+          }));
+          setProducts(mappedProducts);
+        }
+      } catch (error) {
+        console.error("Error loading products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     setCategoryFilter(searchParams.get("category") || undefined);
@@ -46,17 +91,39 @@ const ProductsPage = () => {
     setSaleOnly(searchParams.get("sale") === "true");
   }, [location.search]);
 
-  // Apply filters
   useEffect(() => {
-    let filtered = filterProducts(categoryFilter, searchQuery, featuredOnly, newOnly, saleOnly);
+    let filtered = [...products];
     
-    // Apply price range
+    if (categoryFilter) {
+      filtered = filtered.filter(product => product.category === categoryFilter);
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(query) ||
+        product.description.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query)
+      );
+    }
+    
+    if (featuredOnly) {
+      filtered = filtered.filter(product => product.featured);
+    }
+    
+    if (newOnly) {
+      filtered = filtered.filter(product => product.new);
+    }
+    
+    if (saleOnly) {
+      filtered = filtered.filter(product => product.sale);
+    }
+    
     filtered = filtered.filter(product => {
       const price = product.salePrice || product.price;
       return price >= priceRange[0] && price <= priceRange[1];
     });
     
-    // Apply sorting
     if (sortOption === "price-asc") {
       filtered = [...filtered].sort((a, b) => (a.salePrice || a.price) - (b.salePrice || b.price));
     } else if (sortOption === "price-desc") {
@@ -64,9 +131,8 @@ const ProductsPage = () => {
     }
     
     setFilteredProducts(filtered);
-  }, [categoryFilter, searchQuery, featuredOnly, newOnly, saleOnly, priceRange, sortOption]);
+  }, [products, categoryFilter, searchQuery, featuredOnly, newOnly, saleOnly, priceRange, sortOption]);
 
-  // Categories for the sidebar
   const categories = [
     { id: "men", name: "Men" },
     { id: "women", name: "Women" },
@@ -74,12 +140,10 @@ const ProductsPage = () => {
     { id: "accessories", name: "Accessories" }
   ];
 
-  // Handler for category filter clicking
   const handleCategoryClick = (categoryId: string) => {
     setCategoryFilter(categoryFilter === categoryId ? undefined : categoryId);
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setCategoryFilter(undefined);
     setFeaturedOnly(false);
@@ -170,7 +234,6 @@ const ProductsPage = () => {
     </div>
   );
 
-  // Page title based on filters
   const getPageTitle = () => {
     if (searchQuery) {
       return `Search Results: "${searchQuery}"`;
@@ -189,14 +252,12 @@ const ProductsPage = () => {
       <h1 className="font-serif text-3xl md:text-4xl font-bold mb-8">{getPageTitle()}</h1>
 
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Desktop Sidebar */}
         <div className="w-full md:w-64 lg:w-72 shrink-0 hidden md:block">
           <div className="sticky top-24">
             <FilterSidebar />
           </div>
         </div>
 
-        {/* Mobile Filter Drawer */}
         <div className="md:hidden">
           <div className="flex items-center justify-between mb-4">
             <Sheet>
@@ -231,9 +292,7 @@ const ProductsPage = () => {
           </div>
         </div>
 
-        {/* Products Grid */}
         <div className="flex-1">
-          {/* Desktop Sort */}
           <div className="hidden md:flex justify-between items-center mb-6">
             <div className="text-sm text-muted-foreground">
               {filteredProducts.length} products
@@ -252,7 +311,19 @@ const ProductsPage = () => {
             </div>
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div key={item} className="bg-white rounded-lg animate-pulse">
+                  <div className="aspect-[3/4] bg-gray-200"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-20">
               <h2 className="text-xl font-medium mb-2">No products found</h2>
               <p className="text-muted-foreground mb-6">
@@ -269,11 +340,17 @@ const ProductsPage = () => {
                   className="group block overflow-hidden transition-all hover:shadow-lg rounded-lg bg-white"
                 >
                   <div className="aspect-[3/4] relative overflow-hidden">
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {product.images && product.images.length > 0 ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
                     
                     {product.sale && (
                       <span className="absolute top-4 left-4 bg-accent text-white px-3 py-1 rounded-full text-xs font-medium">
