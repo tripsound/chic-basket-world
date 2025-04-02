@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContextType, User } from './types';
@@ -28,14 +27,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state change listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event, session?.user?.id);
-        if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          try {
-            await fetchAndSetUser(session.user.id);
-          } catch (error) {
-            console.error("Error fetching user after auth state change:", error);
-            setLoading(false);
+        
+        // Only update state with synchronous operations
+        if (session) {
+          // For SIGNED_IN or TOKEN_REFRESHED events, defer the profile fetch
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            setTimeout(() => {
+              fetchAndSetUser(session.user.id);
+            }, 0);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -84,13 +85,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { user: authUser, error } = await loginUser(email, password);
       
       if (error) throw error;
-      if (authUser) {
-        // Fetch the user profile immediately after successful login
-        const userData = await fetchUserProfile(authUser.id);
-        setUser(userData); // Update the user state
-        return userData;
-      }
-      return null;
+      
+      // Returning early - the auth state change handler will update the user state
+      return authUser ? await fetchUserProfile(authUser.id) : null;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;

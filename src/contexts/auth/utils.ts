@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 import { toast } from "sonner";
@@ -66,21 +65,6 @@ export const loginUser = async (email: string, password: string): Promise<{ user
     return { user: data.user, error: null };
   } catch (error: any) {
     console.error('Login error:', error);
-    
-    // Show specific error messages for common login issues
-    let errorMessage = "Failed to login. Please try again.";
-    
-    if (error.message) {
-      if (error.message.includes('Invalid login credentials')) {
-        errorMessage = "Invalid email or password. Please try again.";
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = "Please verify your email address before logging in.";
-      } else {
-        errorMessage = error.message;
-      }
-    }
-    
-    toast.error(errorMessage);
     return { user: null, error };
   }
 };
@@ -140,17 +124,40 @@ export const sendVerificationEmail = async (email: string): Promise<void> => {
 
 export const updateUserProfile = async (userId: string, profileData: any): Promise<void> => {
   try {
-    const { error } = await supabase
+    // Check if profile exists first
+    const { data: existingProfile } = await supabase
       .from('profiles')
-      .update({
-        full_name: profileData.name,
-        phone: profileData.phone,
-        address: profileData.address,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
-    
-    if (error) throw error;
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (existingProfile) {
+      // Update existing profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileData.name,
+          phone: profileData.phone,
+          address: profileData.address,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+      
+      if (error) throw error;
+    } else {
+      // Insert new profile if it doesn't exist
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: profileData.name,
+          phone: profileData.phone,
+          address: profileData.address,
+          updated_at: new Date().toISOString(),
+        });
+      
+      if (error) throw error;
+    }
     
     toast.success("Profile updated successfully");
   } catch (error: any) {

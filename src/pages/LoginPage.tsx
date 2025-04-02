@@ -43,11 +43,11 @@ const LoginPage = () => {
     },
   });
   
-  // Control initial loading state - limit to maximum 2 seconds
+  // Control initial loading state - limit to maximum 1 second
   useEffect(() => {
     const timer = setTimeout(() => {
       setInitialLoading(false);
-    }, 2000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -86,17 +86,23 @@ const LoginPage = () => {
       console.error("Login submission error:", error);
       
       // Set form-level error for authentication failures
-      if (error.message && error.message.includes('not confirmed')) {
-        // If email is not verified, show a specific message and option to verify
-        toast.error("Please verify your email before logging in", {
-          action: {
-            label: "Verify Email",
-            onClick: () => navigate(`/verify-email?email=${encodeURIComponent(values.email)}`),
-          },
-        });
+      if (error.message) {
+        if (error.message.includes('not confirmed')) {
+          // If email is not verified, show a specific message and option to verify
+          toast.error("Please verify your email before logging in", {
+            action: {
+              label: "Verify Email",
+              onClick: () => navigate(`/verify-email?email=${encodeURIComponent(values.email)}`),
+            },
+          });
+        } else if (error.message.includes('Invalid login credentials')) {
+          toast.error("Invalid email or password. Please try again.");
+        } else {
+          // General login error
+          toast.error(error.message || "Login failed. Please try again.");
+        }
       } else {
-        // General login error
-        toast.error(error.message || "Login failed. Please try again.");
+        toast.error("An unexpected error occurred. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
@@ -104,7 +110,7 @@ const LoginPage = () => {
   };
 
   // Show loading state while either auth is loading or during initial load
-  if (initialLoading) {
+  if (initialLoading || authLoading) {
     return <LoadingState />;
   }
 
@@ -131,6 +137,7 @@ const LoginPage = () => {
                       placeholder="your@email.com"
                       {...field}
                       disabled={isSubmitting}
+                      autoComplete="email"
                     />
                   </FormControl>
                   <FormMessage />
@@ -150,6 +157,7 @@ const LoginPage = () => {
                       placeholder="••••••••"
                       {...field}
                       disabled={isSubmitting}
+                      autoComplete="current-password"
                     />
                   </FormControl>
                   <FormMessage />
