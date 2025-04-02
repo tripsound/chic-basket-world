@@ -67,32 +67,38 @@ export const useProductForm = (form: UseFormReturn<FormValues>, productId: strin
         updated_at: new Date().toISOString(),
       };
 
+      let error;
+      
       if (productId && productId !== "new") {
         // Update existing product
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from("products")
           .update(productData)
           .eq("id", productId);
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(error.message || "Failed to update product");
+          
+        error = updateError;
+        if (!error) {
+          toast.success("Product updated successfully");
         }
-        toast.success("Product updated successfully");
       } else {
         // Create new product
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from("products")
           .insert(productData);
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(error.message || "Failed to create product");
+          
+        error = insertError;
+        if (!error) {
+          toast.success("Product created successfully");
         }
-        toast.success("Product created successfully");
       }
 
-      navigate("/admin/products");
+      if (error) {
+        console.error("Supabase error:", error);
+        throw new Error(error.message || "Failed to save product");
+      } else {
+        // Navigate regardless of whether it was an update or create
+        navigate("/admin/products");
+      }
     } catch (error: any) {
       console.error("Error saving product:", error);
       toast.error(error.message || "Failed to save product");
